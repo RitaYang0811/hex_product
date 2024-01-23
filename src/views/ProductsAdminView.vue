@@ -1,7 +1,7 @@
 <template>
   <div class="container">
     <div class="text-end mt-4">
-      <button class="btn btn-primary">建立新的產品</button>
+      <button class="btn btn-primary" @click="getProducts">建立新的產品</button>
     </div>
     <table class="table mt-4">
       <thead>
@@ -15,22 +15,24 @@
         </tr>
       </thead>
       <tbody>
-        <tr>
-          <td></td>
-          <td></td>
-          <td class="text-end"></td>
-          <td class="text-end"></td>
-          <td>
-            <span class="text-success">啟用</span>
-            <span>未啟用</span>
-          </td>
-          <td>
-            <div class="btn-group">
-              <button type="button" class="btn btn-outline-primary btn-sm">編輯</button>
-              <button type="button" class="btn btn-outline-danger btn-sm">刪除</button>
-            </div>
-          </td>
-        </tr>
+        <template v-for="item in products" :key="item.id">
+          <tr>
+            <td>{{ item.category }}</td>
+            <td>{{ item.title }}</td>
+            <td class="text-end">{{ item.price }}</td>
+            <td class="text-end">{{ item.origin_price }}</td>
+            <td>
+              <span v-if="item.is_enabled" class="text-success">啟用</span>
+              <span v-else>未啟用</span>
+            </td>
+            <td>
+              <div class="btn-group">
+                <button type="button" class="btn btn-outline-primary btn-sm">編輯</button>
+                <button type="button" class="btn btn-outline-danger btn-sm">刪除</button>
+              </div>
+            </td>
+          </tr>
+        </template>
       </tbody>
     </table>
   </div>
@@ -194,6 +196,41 @@
   </div>
 </template>
 
-<script setup lang="js" name="ProductsAdminView"></script>
+<script setup lang="js" name="ProductsAdminView">
+import { ref, reactive, onMounted } from 'vue'
+import axios from 'axios'
+const token = ref('')
+const products = reactive([])
+function getProducts() {
+  axios
+    .get('https://ec-course-api.hexschool.io/v2/api/cd131423/admin/products')
+    .then((res) => {
+      products.push(...res.data.products)
+    })
+    .catch((err) => {
+      console.log(err.data)
+    })
+}
+onMounted(() => {
+  token.value = document.cookie.replace(
+    /(?:(?:^|.*;\s*)cd131423token\s*\=\s*([^;]*).*$)|^.*$/,
+    '$1'
+  )
+
+  axios.defaults.headers.common['Authorization'] = token.value
+  checkLogin()
+  console.log(token.value)
+})
+function checkLogin() {
+  axios
+    .post(`https://vue3-course-api.hexschool.io/v2/api/user/check`)
+    .then(() => {
+      getProducts()
+    })
+    .catch((err) => {
+      console.log(err)
+    })
+}
+</script>
 
 <style></style>
