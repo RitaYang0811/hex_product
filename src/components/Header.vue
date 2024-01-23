@@ -6,6 +6,8 @@
           <RouterLink to="/" class="nav-link hover-under-link">Home</RouterLink>
 
           <RouterLink to="/products" class="nav-link hover-under-link">Products</RouterLink>
+
+          <RouterLink to="/products-admin" class="nav-link hover-under-link">Admin</RouterLink>
         </div>
         <button class="btn btn-outline-success" type="button" @click="toLoginPage">Login</button>
       </div>
