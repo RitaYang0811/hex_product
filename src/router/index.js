@@ -4,7 +4,7 @@ import LoginView from '../views/LoginView.vue'
 import ProductsView from '../views/ProductsView.vue'
 import ProductsAdminView from '../views/ProductsAdminView.vue'
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
+  history: createWebHashHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
