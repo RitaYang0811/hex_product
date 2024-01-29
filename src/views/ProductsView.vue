@@ -73,10 +73,12 @@
 <script setup lang="js" name="ProductsView">
 import { reactive, ref, onMounted } from 'vue'
 import axios from 'axios'
+import { useRouter } from 'vue-router'
 //數據
 const products = reactive([])
 const temp = ref({})
 const token = ref('')
+const router = useRouter()
 //鉤子
 onMounted(() => {
   token.value = document.cookie.replace(
@@ -108,6 +110,7 @@ function checkLogin() {
     })
     .catch((err) => {
       console.log(err)
+      router.push({ name: 'login' })
     })
 }
 </script>
