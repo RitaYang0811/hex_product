@@ -321,7 +321,7 @@ function getProducts(page = 1) {
       products.value = [...res.data.products]
       pagination.value = { ...res.data.pagination }
       console.log(products.value)
-      console.log(pagination)
+      console.log(pagination.value)
     })
     .catch((err) => {
       console.log(err.data)
