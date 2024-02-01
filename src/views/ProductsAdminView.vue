@@ -254,7 +254,7 @@
         </div>
       </div>
     </div>
-    <Pagination :pages="pagination"></Pagination>
+    <Pagination :pages="pagination" @send-page="savePage"></Pagination>
   </div>
 </template>
 
@@ -271,7 +271,7 @@ const myModal = ref('')
 const delModal = ref('')
 const token = ref('')
 const products = reactive([])
-const pagination = reactive({})
+const pagination = ref({})
 const productInfo = reactive({
   category: '',
   content: '',
@@ -288,7 +288,7 @@ const productInfo = reactive({
 })
 const id = ref('')
 const isNew = ref('')
-
+const page = ref(1)
 //鉤子
 onMounted(() => {
   token.value = document.cookie.replace(
@@ -314,18 +314,24 @@ function checkLogin() {
       router.push({ name: 'login' })
     })
 }
-function getProducts(page = 1) {
+function getProducts(page) {
   axios
     .get(`https://ec-course-api.hexschool.io/v2/api/cd131423/admin/products?page=${page}`)
     .then((res) => {
       products.value = [...res.data.products]
       pagination.value = { ...res.data.pagination }
-      console.log(products.value)
-      console.log(pagination)
+      console.log('傳送頁面', page)
+      // console.log(products.value)
+      // console.log(pagination)
     })
     .catch((err) => {
       console.log(err.data)
     })
+}
+function savePage(currentPage) {
+  page.value = currentPage
+  console.log('點擊頁', page.value)
+  getProducts(page.value)
 }
 function openModal(status, item, idVal) {
   if (status === 'new') {
