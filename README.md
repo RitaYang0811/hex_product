@@ -1,5 +1,6 @@
 # hexschool homework
 
+https://github.com/RitaYang0811/hex_product
 https://ritayang0811.github.io/hex_product/
 
 This template should help get you started developing with Vue 3 in Vite.

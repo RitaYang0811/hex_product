@@ -113,7 +113,7 @@
                     <button
                       class="btn btn-outline-primary btn-sm d-block w-100"
                       v-if="
-                        !productInfo.imagesUrl.length === 0 ||
+                        productInfo.imagesUrl.length === 0 ||
                         productInfo.imagesUrl[productInfo.imagesUrl.length - 1]
                       "
                       @click="createImage"
@@ -305,7 +305,6 @@ const pagination = ref({})
 const productInfo = ref({
   imagesUrl: []
 })
-
 const isNew = ref('')
 const page = ref(1)
 //鉤子
