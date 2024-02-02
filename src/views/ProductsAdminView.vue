@@ -54,7 +54,7 @@
       </table>
     </div>
     <!-- add / edit Modal -->
-    <div
+    <!-- <div
       id="productModal"
       ref="productModal"
       class="modal fade"
@@ -91,12 +91,7 @@
                     <img class="img-fluid" :src="productInfo.imageUrl" alt="" />
                   </div>
                 </div>
-                <!-- 多圖區域 -->
                 <h4 for="imageUrl" class="form-label">詳細圖片</h4>
-
-                <!-- ### 多圖 - 判斷 imagesUrl 是否為陣列 - 如果是陣列，才能顯示被新增 - 新增條件 1.
-                如果imagesUrl 是空陣列 ，則直接新增 2. 如果當前的資料有被新增，才能增加一筆 -
-                移除條件 1. 除了新增以為的其他條件 -->
                 <div v-if="Array.isArray(productInfo.imagesUrl)">
                   <div v-for="(img, key) in productInfo.imagesUrl" :key="key + 123">
                     <img :src="img" alt="" class="img-fluid" />
@@ -246,59 +241,29 @@
           </div>
         </div>
       </div>
-    </div>
-    <!-- delete Modal -->
-    <div
-      id="delProductModal"
-      ref="delProductModal"
-      class="modal fade"
-      tabindex="-1"
-      aria-labelledby="delProductModalLabel"
-      aria-hidden="true"
-    >
-      <div class="modal-dialog">
-        <div class="modal-content border-0">
-          <div class="modal-header bg-danger text-white">
-            <h5 id="delProductModalLabel" class="modal-title">
-              <span>刪除產品</span>
-            </h5>
-            <button
-              type="button"
-              class="btn-close"
-              data-bs-dismiss="modal"
-              aria-label="Close"
-            ></button>
-          </div>
-          <div class="modal-body">
-            是否刪除
-            <strong class="text-danger">{{ productInfo.title }}</strong> 商品(刪除後將無法恢復)。
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
-              取消
-            </button>
-            <button type="button" class="btn btn-danger" @click="delProduct(productInfo.id)">
-              確認刪除
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    </div> -->
+    <DeleteModel :product-info="productInfo" @del-product="delProduct" ref="dModal"></DeleteModel>
+    <ProductModal
+      :product-info="productInfo"
+      :is-new="isNew"
+      @confirm-update="confirmUpdate"
+      ref="pModal"
+    ></ProductModal>
+
     <Pagination :pages="pagination" @send-page="savePage"></Pagination>
   </div>
 </template>
 
 <script setup lang="js" name="ProductsAdminView">
-import { ref, reactive, onMounted } from 'vue'
-import bootstrap from 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import { ref, onMounted } from 'vue'
 import { nanoid } from 'nanoid'
 import axios from 'axios'
 import { useRouter } from 'vue-router'
+import ProductModal from '../components/ProductModal.vue'
+import DeleteModel from '../components/DeleteModel.vue'
 import Pagination from '../components/Pagination.vue'
 //數據
 const router = useRouter()
-const myModal = ref('')
-const delModal = ref('')
 const token = ref('')
 const products = ref([])
 const pagination = ref({})
@@ -307,6 +272,8 @@ const productInfo = ref({
 })
 const isNew = ref('')
 const page = ref(1)
+let pModal = ref()
+let dModal = ref()
 //鉤子
 onMounted(() => {
   token.value = document.cookie.replace(
@@ -316,8 +283,6 @@ onMounted(() => {
   axios.defaults.headers.common['Authorization'] = token.value
   checkLogin()
   // console.log(token)
-  myModal.value = new bootstrap.Modal('#productModal', { keyboard: false, backdrop: 'static' })
-  delModal.value = new bootstrap.Modal('#delProductModal', { keyboard: false, backdrop: 'static' })
 })
 
 //方法
@@ -337,13 +302,11 @@ function getProducts(page) {
     .get(`https://ec-course-api.hexschool.io/v2/api/cd131423/admin/products?page=${page}`)
     .then((res) => {
       console.log(res)
-      // Object.assign(products, res.data.products)
       products.value = res.data.products
       pagination.value = { ...res.data.pagination }
-      console.log('傳送頁面', page)
+      // console.log('傳送頁面', page)
       console.log('products裡的內容', products.value)
       console.log('productInfo裡的內容', productInfo)
-      // console.log(pagination)
     })
     .catch((err) => {
       console.log(err.data)
@@ -354,27 +317,21 @@ function savePage(currentPage) {
   console.log('點擊頁', page.value)
   getProducts(page.value)
 }
-//已將productInfo 改為ref，先前reactive 用法已註解
+
 function openModal(status, item) {
   if (status === 'new') {
-    // Object.keys(productInfo).forEach((key) => {
-    //   productInfo[key] = null
-    //   productInfo.imagesUrl = []
-    // })
     productInfo.value = { imagesUrl: [] }
     isNew.value = true
-    myModal.value.show()
+    pModal.value.openModal()
   } else if (status === 'edit') {
-    // Object.assign(productInfo, item)
     console.log('編輯帶入的item', item)
-    productInfo.value = { ...item }
+    productInfo.value = { ...item, imagesUrl: item.imagesUrl || [] }
     isNew.value = false
     console.log('編輯的productInfo', productInfo)
-    myModal.value.show()
+    pModal.value.openModal()
   } else if (status === 'delete') {
-    // Object.assign(productInfo, item)
     productInfo.value = { ...item }
-    delModal.value.show()
+    dModal.value.openModal()
   }
 }
 
@@ -391,7 +348,7 @@ function confirmUpdate(isNew) {
   axios[apiMethod](apiUrl, { data: productInfo.value })
     .then((res) => {
       console.log(res.data)
-      myModal.value.hide()
+      pModal.value.hideModal()
       getProducts()
     })
     .catch((err) => {
@@ -403,16 +360,12 @@ function delProduct(id) {
     .delete(`https://ec-course-api.hexschool.io/v2/api/cd131423/admin/product/${id}`)
     .then((res) => {
       console.log(res.data)
-      delModal.value.hide()
+      dModal.value.hideModal()
       getProducts()
     })
     .catch((err) => {
       console.log(err.data)
     })
-}
-function createImage() {
-  // productInfo.value.imagesUrl = []
-  productInfo.value.imagesUrl.push('')
 }
 </script>
 

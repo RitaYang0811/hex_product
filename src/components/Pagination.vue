@@ -38,7 +38,7 @@
 </template>
 
 <script setup name="Pagination">
-import { toRefs, defineProps, onMounted } from 'vue'
+import { defineProps } from 'vue'
 
 const { pages } = defineProps(['pages'])
 const emitPage = defineEmits(['send-page'])
