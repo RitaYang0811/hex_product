@@ -18,7 +18,7 @@
           </tr>
         </thead>
         <tbody>
-          <template v-for="item in products.value" :key="item.id">
+          <template v-for="item in products" :key="item.id">
             <tr>
               <td>{{ item.category }}</td>
               <td>{{ item.title }}</td>
@@ -34,7 +34,7 @@
                     type="button"
                     class="btn btn-outline-primary btn-sm"
                     data-bs-toggle="modal"
-                    @click="openModal('edit', item, item.id)"
+                    @click="openModal('edit', item)"
                   >
                     編輯
                   </button>
@@ -42,7 +42,7 @@
                     type="button"
                     class="btn btn-outline-danger btn-sm"
                     data-bs-toggle="modal"
-                    @click="openModal('delete', item, item.id)"
+                    @click="openModal('delete', item)"
                   >
                     刪除
                   </button>
@@ -66,7 +66,8 @@
         <div class="modal-content border-0">
           <div class="modal-header bg-dark text-white">
             <h5 id="productModalLabel" class="modal-title">
-              <span>新增產品</span>
+              <span v-if="isNew">新增產品</span>
+              <span v-else>編輯產品</span>
             </h5>
             <button
               type="button"
@@ -80,27 +81,54 @@
               <div class="col-sm-4">
                 <div class="mb-2">
                   <div class="mb-3">
-                    <label for="imageUrl" class="form-label">輸入圖片網址</label>
+                    <label for="imageUrl" class="h4 form-label">主要圖片</label>
                     <input
                       type="text"
                       class="form-control"
-                      placeholder="請輸入圖片連結"
+                      placeholder="請輸入主要圖片連結"
                       v-model="productInfo.imageUrl"
+                    />
+                    <img class="img-fluid" :src="productInfo.imageUrl" alt="" />
+                  </div>
+                </div>
+                <!-- 多圖區域 -->
+                <h4 for="imageUrl" class="form-label">詳細圖片</h4>
+
+                <!-- ### 多圖 - 判斷 imagesUrl 是否為陣列 - 如果是陣列，才能顯示被新增 - 新增條件 1.
+                如果imagesUrl 是空陣列 ，則直接新增 2. 如果當前的資料有被新增，才能增加一筆 -
+                移除條件 1. 除了新增以為的其他條件 -->
+                <div v-if="Array.isArray(productInfo.imagesUrl)">
+                  <div v-for="(img, key) in productInfo.imagesUrl" :key="key + 123">
+                    <img :src="img" alt="" class="img-fluid" />
+                    <label for="imageUrl" class="form-label">圖片網址</label>
+                    <input
+                      type="text"
+                      class="form-control mb-3"
+                      placeholder="請輸入圖片連結"
+                      v-model="productInfo.imagesUrl[key]"
                     />
                   </div>
 
-                  <img class="img-fluid" src="" alt="" />
-                </div>
-                <div>
-                  <button
-                    class="btn btn-outline-primary btn-sm d-block w-100"
-                    @click="uploadPicture(pic)"
-                  >
-                    新增圖片
-                  </button>
-                </div>
-                <div>
-                  <button class="btn btn-outline-danger btn-sm d-block w-100">刪除圖片</button>
+                  <div>
+                    <button
+                      class="btn btn-outline-primary btn-sm d-block w-100"
+                      v-if="
+                        !productInfo.imagesUrl.length === 0 ||
+                        productInfo.imagesUrl[productInfo.imagesUrl.length - 1]
+                      "
+                      @click="createImage"
+                    >
+                      新增圖片
+                    </button>
+
+                    <button
+                      class="btn btn-outline-danger btn-sm d-block w-100"
+                      v-else
+                      @click="productInfo.imagesUrl.pop('')"
+                    >
+                      刪除圖片
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -211,7 +239,7 @@
             <button
               type="button"
               class="btn btn-primary"
-              @click="confirmUpdate(isNew, productInfo, id)"
+              @click="confirmUpdate(isNew, productInfo)"
             >
               確認
             </button>
@@ -243,13 +271,15 @@
           </div>
           <div class="modal-body">
             是否刪除
-            <strong class="text-danger"></strong> 商品(刪除後將無法恢復)。
+            <strong class="text-danger">{{ productInfo.title }}</strong> 商品(刪除後將無法恢復)。
           </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
               取消
             </button>
-            <button type="button" class="btn btn-danger" @click="delProduct(id)">確認刪除</button>
+            <button type="button" class="btn btn-danger" @click="delProduct(productInfo.id)">
+              確認刪除
+            </button>
           </div>
         </div>
       </div>
@@ -270,23 +300,12 @@ const router = useRouter()
 const myModal = ref('')
 const delModal = ref('')
 const token = ref('')
-const products = reactive([])
+const products = ref([])
 const pagination = ref({})
-const productInfo = reactive({
-  category: '',
-  content: '',
-  description: '',
-  id: '',
-  imageUrl: '',
-  imagesUrl: [],
-  is_enabled: '',
-  num: '',
-  origin_price: '',
-  price: '',
-  title: '',
-  unit: ''
+const productInfo = ref({
+  imagesUrl: []
 })
-const id = ref('')
+
 const isNew = ref('')
 const page = ref(1)
 //鉤子
@@ -318,10 +337,13 @@ function getProducts(page) {
   axios
     .get(`https://ec-course-api.hexschool.io/v2/api/cd131423/admin/products?page=${page}`)
     .then((res) => {
-      products.value = [...res.data.products]
+      console.log(res)
+      // Object.assign(products, res.data.products)
+      products.value = res.data.products
       pagination.value = { ...res.data.pagination }
       console.log('傳送頁面', page)
-      // console.log(products.value)
+      console.log('products裡的內容', products.value)
+      console.log('productInfo裡的內容', productInfo)
       // console.log(pagination)
     })
     .catch((err) => {
@@ -333,36 +355,41 @@ function savePage(currentPage) {
   console.log('點擊頁', page.value)
   getProducts(page.value)
 }
-function openModal(status, item, idVal) {
+//已將productInfo 改為ref，先前reactive 用法已註解
+function openModal(status, item) {
   if (status === 'new') {
-    Object.keys(productInfo).forEach((key) => {
-      productInfo[key] = null
-      productInfo.imagesUrl = []
-    })
+    // Object.keys(productInfo).forEach((key) => {
+    //   productInfo[key] = null
+    //   productInfo.imagesUrl = []
+    // })
+    productInfo.value = { imagesUrl: [] }
     isNew.value = true
     myModal.value.show()
   } else if (status === 'edit') {
-    Object.assign(productInfo, item)
-    id.value = idVal
+    // Object.assign(productInfo, item)
+    console.log('編輯帶入的item', item)
+    productInfo.value = { ...item }
     isNew.value = false
+    console.log('編輯的productInfo', productInfo)
     myModal.value.show()
   } else if (status === 'delete') {
-    id.value = idVal
+    // Object.assign(productInfo, item)
+    productInfo.value = { ...item }
     delModal.value.show()
   }
 }
 
-function confirmUpdate(isNew, data, id) {
+function confirmUpdate(isNew) {
   let apiUrl = 'https://ec-course-api.hexschool.io/v2/api/cd131423/admin/product'
   let apiMethod = 'post'
   if (isNew === true) {
     const ID = nanoid()
-    data.id = ID
+    productInfo.value.id = ID
   } else if (isNew === false) {
-    apiUrl = `https://ec-course-api.hexschool.io/v2/api/cd131423/admin/product/${id}`
+    apiUrl = `https://ec-course-api.hexschool.io/v2/api/cd131423/admin/product/${productInfo.value.id}`
     apiMethod = 'put'
   }
-  axios[apiMethod](apiUrl, { data: data })
+  axios[apiMethod](apiUrl, { data: productInfo.value })
     .then((res) => {
       console.log(res.data)
       myModal.value.hide()
@@ -383,6 +410,10 @@ function delProduct(id) {
     .catch((err) => {
       console.log(err.data)
     })
+}
+function createImage() {
+  // productInfo.value.imagesUrl = []
+  productInfo.value.imagesUrl.push('')
 }
 </script>
 
